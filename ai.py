@@ -1,7 +1,9 @@
 import requests
 import json
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+import os
+
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
 
 def match_job(resume: str, job_description: str):
     prompt = f"Resume:\n{resume}\n\nJob Description:\n{job_description}\n\nOn a scale of 0 to 100, how well does this resume match the job description? Return ONLY the number."
