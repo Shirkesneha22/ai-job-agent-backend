@@ -1,0 +1,49 @@
+SNEHA BALU SHIRKE
+Full Stack Developer
+Pune | snehashirke221@gmail.com | 7888076881 | LinkedIn Profile | Portfolio
+
+SUMMARY
+
+Full Stack Developer with expertise in React, Next.js, and Python, along with strong experience in building AI-driven applications. Skilled in developing scalable web solutions, integrating APIs, and deploying cloud- based systems using AWS. Passionate about leveraging AI (NLP, RAG, and Data Intelligence) to solve real-world problems.
+
+EXPERIENCE
+
+Full Stack Developer - Vedant Info edge India LLP, Pune	Sep 2025 - Mar 2026
+* Developed and deployed a real estate platform with end-to-end ownership.
+* Built optimized and reusable UI components using React.js.
+* Worked with AWS (Lambda, DynamoDB, S3, CloudFront) for backend and deployment.
+* Designed APIs and improved application performance and scalability.
+Frontend Developer Intern, Nearby Rooms, Pune	Feb 2025- Aug 2025
+* Developed responsive UI using React.js, Redux, HTML, CSS, and JavaScript.
+* Integrated REST APIs and collaborated with design and backend teams.
+* Enhanced performance and usability of web applications.
+
+PROJECTS
+
+AI Resume Analyzer & Job Matcher
+* Developed an AI-based web application to analyze resumes and match them with job descriptions.
+* Implemented NLP techniques to extract skills, experience, and keywords from resumes.
+* Generated ATS-based resume scores and job match percentages.
+* Identified missing skills and provided AI-driven suggestions for improvement.
+AI Document Intelligence Platform
+* Built a platform that enables users to upload documents and interact with them using AI.
+* Implemented document summarization and question-answering features.
+* Used Retrieval-Augmented Generation (RAG) for context-aware responses.
+* Extracted key insights from documents for better understanding and decision-making.
+AI Analytics Dashboard (Decision-Making AI)
+* Created an AI-powered dashboard to analyze business data and generate insights.
+* Enabled CSV data upload and visualization using charts and graphs.
+* Provided AI-generated insights and predictions for future trends.
+* Supported data-driven decision-making using intelligent analysis.
+
+EDUCATION
+
+B.E: - Artificial Intelligence & Machine Learning	CGPA: 7.21 Savitribai Phule Pune University
+
+TECHNICAL SKILLS
+
+* Frontend: React, Next.js, TypeScript, Tailwind CSS
+* Backend: Python (FastAPI), Node.js, REST APIs
+* Database: PostgreSQL, DynamoDB, MongoDB
+* Cloud: AWS (Lambda, S3, CloudFront, DynamoDB, EC2)
+* Tools: Git, GitHub, CI/CD
