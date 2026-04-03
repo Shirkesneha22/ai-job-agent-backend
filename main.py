@@ -91,14 +91,12 @@ async def get_jobs(database: Session = Depends(get_db)):
 @app.post("/scrape", response_model=ScrapeResponse, tags=["Jobs"])
 async def scrape_jobs(database: Session = Depends(get_db)):
     """
-    Scrapes job boards (Lever/Greenhouse), calculates match scores, 
+    Scrapes job boards, calculates match scores, 
     and saves new/updated jobs to the database.
     """
     try:
-        # 1. Scrape jobs using Playwright
-        lever_jobs = await scraper.scrape_lever()
-        greenhouse_jobs = await scraper.scrape_greenhouse()
-        all_scraped_jobs = lever_jobs + greenhouse_jobs
+        # 1. Scrape jobs from sources
+        all_scraped_jobs = await scraper.run_all_scrapers()
         
         # 2. Read resume for matching
         resume = read_resume()
@@ -124,10 +122,6 @@ async def scrape_jobs(database: Session = Depends(get_db)):
             "count": len(saved_jobs),
             "jobs": saved_jobs
         }
-        
-    except Exception as e:
-        database.rollback()
-        raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
         
     except Exception as e:
         database.rollback()
