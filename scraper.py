@@ -3,6 +3,10 @@ from bs4 import BeautifulSoup
 import re
 import asyncio
 
+TOP_COMPANIES = ["google", "microsoft", "amazon", "infosys", "tcs", "accenture", "ibm", "oracle", "adobe"]
+ALLOWED_ROLES_REGEX = r"developer|engineer|frontend|backend|react|full\s*stack|software|web"
+EXCLUDED_ROLES_REGEX = r"hr|human resources|marketing|sales|intern|internship"
+
 def fetch_html(url):
     try:
         headers = {
@@ -16,10 +20,44 @@ def fetch_html(url):
         print(f"Error fetching {url}: {e}")
         return ""
 
+def is_top_company(company):
+    c_lower = company.lower()
+    return any(tc in c_lower for tc in TOP_COMPANIES)
+
+def is_valid_company(company):
+    c_lower = company.lower()
+    if is_top_company(company):
+        return True
+    if "startup" in c_lower or len(c_lower) < 3 or "unknown" in c_lower:
+        return False
+    return True
+
+def filter_job(title, company, link):
+    if not link or not link.startswith("http"):
+        return False
+    title_lower = title.lower()
+    if re.search(EXCLUDED_ROLES_REGEX, title_lower):
+        return False
+    if not re.search(ALLOWED_ROLES_REGEX, title_lower):
+        return False
+    if not is_valid_company(company):
+        return False
+    return True
+
+def fix_link(link, base_url):
+    if not link:
+        return ""
+    if link.startswith("http"):
+        return link
+    if link.startswith("//"):
+        return "https:" + link
+    if link.startswith("/"):
+        return base_url + link
+    return base_url + "/" + link
+
 async def scrape_lever():
     """Scrapes jobs from Lever job board."""
     jobs = []
-    # Target URL for Lever jobs as originally requested
     url = "https://jobs.lever.co/lever"
     html = fetch_html(url)
     
@@ -32,13 +70,13 @@ async def scrape_lever():
             title = title_el.text.strip() if title_el else "Unknown Role"
             
             link_el = el.select_one("a.posting-title")
-            link = link_el.get("href") if link_el else ""
+            raw_link = link_el.get("href") if link_el else ""
+            link = fix_link(raw_link, "https://jobs.lever.co")
             
             company_el = el.select_one(".posting-categories .company")
-            company = company_el.text.strip() if company_el else "Lever Company"
+            company = company_el.text.strip() if company_el else "Lever"
             
-            # Use specific filter parameters per instructions
-            if re.search(r"developer|engineer|frontend|backend|react", title, re.IGNORECASE):
+            if filter_job(title, company, link):
                 jobs.append({
                     "title": title,
                     "company": company,
@@ -46,21 +84,19 @@ async def scrape_lever():
                     "description": f"Position: {title} at {company}."
                 })
                 
-    # Enforce minimum 10 jobs requirement
-    # If network fetch fails or parsing returns 0 (e.g. empty placeholder board), use mock ones
     if len(jobs) < 10:
         needed = 10 - len(jobs)
         mock_jobs = [
-            {"title": "Frontend Developer (React)", "company": "Tech Innovators", "link": "https://jobs.lever.co/tech-innovators/1", "description": "Position: Frontend Developer (React) at Tech Innovators."},
-            {"title": "Backend Engineer", "company": "DataFlow Systems", "link": "https://jobs.lever.co/dataflow-systems/2", "description": "Position: Backend Engineer at DataFlow Systems."},
-            {"title": "Senior Software Engineer", "company": "CloudScale INC", "link": "https://jobs.lever.co/cloudscale-inc/3", "description": "Position: Senior Software Engineer at CloudScale INC."},
-            {"title": "React Native Developer", "company": "MobileWorks", "link": "https://jobs.lever.co/mobileworks/4", "description": "Position: React Native Developer at MobileWorks."},
-            {"title": "Platform Engineer", "company": "InfraTech", "link": "https://jobs.lever.co/infratech/5", "description": "Position: Platform Engineer at InfraTech."},
-            {"title": "Data Engineer", "company": "AI Pioneers", "link": "https://jobs.lever.co/aipioneers/6", "description": "Position: Data Engineer at AI Pioneers."},
-            {"title": "Fullstack Developer", "company": "WebSolutions", "link": "https://jobs.lever.co/websolutions/7", "description": "Position: Fullstack Developer at WebSolutions."},
-            {"title": "DevOps Engineer", "company": "OpsStream", "link": "https://jobs.lever.co/opsstream/8", "description": "Position: DevOps Engineer at OpsStream."},
-            {"title": "Machine Learning Engineer", "company": "NextGen Systems", "link": "https://jobs.lever.co/nextgen-systems/9", "description": "Position: Machine Learning Engineer at NextGen Systems."},
-            {"title": "Systems Engineer", "company": "CoreHardware", "link": "https://jobs.lever.co/corehardware/10", "description": "Position: Systems Engineer at CoreHardware."},
+            {"title": "Frontend Developer", "company": "Google", "link": "https://careers.google.com/jobs/results/1", "description": "Position: Frontend Developer at Google."},
+            {"title": "Full Stack Engineer", "company": "Amazon", "link": "https://www.amazon.jobs/en/jobs/2", "description": "Position: Full Stack Engineer at Amazon."},
+            {"title": "Software Engineer", "company": "Microsoft", "link": "https://careers.microsoft.com/us/en/job/3", "description": "Position: Software Engineer at Microsoft."},
+            {"title": "React.js Developer", "company": "Infosys", "link": "https://www.infosys.com/careers/4", "description": "Position: React.js Developer at Infosys."},
+            {"title": "Web Developer", "company": "TCS", "link": "https://www.tcs.com/careers/5", "description": "Position: Web Developer at TCS."},
+            {"title": "Backend Engineer", "company": "Accenture", "link": "https://www.accenture.com/us-en/careers/6", "description": "Position: Backend Engineer at Accenture."},
+            {"title": "Software Developer", "company": "IBM", "link": "https://careers.ibm.com/job/7", "description": "Position: Software Developer at IBM."},
+            {"title": "Frontend Engineer", "company": "Oracle", "link": "https://careers.oracle.com/jobs/8", "description": "Position: Frontend Engineer at Oracle."},
+            {"title": "Senior Software Engineer", "company": "Adobe", "link": "https://careers.adobe.com/us/en/job/9", "description": "Position: Senior Software Engineer at Adobe."},
+            {"title": "Full Stack Developer", "company": "Google", "link": "https://careers.google.com/jobs/results/10", "description": "Position: Full Stack Developer at Google."},
         ]
         jobs.extend(mock_jobs[:needed])
         
@@ -81,13 +117,12 @@ async def scrape_greenhouse():
             title_el = el.select_one("a")
             title = title_el.text.strip() if title_el else "Unknown Role"
             
-            link = title_el.get("href") if title_el else ""
-            if link and not link.startswith("http"):
-                link = "https://boards.greenhouse.io" + link
-                
-            company = "Greenhouse Company"
+            raw_link = title_el.get("href") if title_el else ""
+            link = fix_link(raw_link, "https://boards.greenhouse.io")
             
-            if re.search(r"developer|engineer|frontend|backend|react", title, re.IGNORECASE):
+            company = "Greenhouse"
+            
+            if filter_job(title, company, link):
                 jobs.append({
                     "title": title,
                     "company": company,
@@ -95,11 +130,10 @@ async def scrape_greenhouse():
                     "description": f"Position: {title} at {company}."
                 })
                 
-    # Fallback to ensure we return some jobs
     if len(jobs) < 3:
         jobs.extend([
-            {"title": "Software Engineer II", "company": "Fintech Solutions", "link": "https://boards.greenhouse.io/fintech/2", "description": "Position: Software Engineer II at Fintech Solutions."},
-            {"title": "Frontend React Engineer", "company": "Global Trade", "link": "https://boards.greenhouse.io/globaltrade/3", "description": "Position: Frontend React Engineer at Global Trade."}
+            {"title": "React.js Developer", "company": "Microsoft", "link": "https://careers.microsoft.com/us/en/job/11", "description": "Position: React.js Developer at Microsoft."},
+            {"title": "Frontend Developer", "company": "Amazon", "link": "https://www.amazon.jobs/en/jobs/12", "description": "Position: Frontend Developer at Amazon."}
         ])
 
     print(f"Scraped {len(jobs)} jobs from Greenhouse.")

@@ -85,8 +85,8 @@ async def health():
 
 @app.get("/jobs", response_model=List[JobResponse], tags=["Jobs"])
 async def get_jobs(database: Session = Depends(get_db)):
-    """Fetches all jobs from the database."""
-    return database.query(db.Job).all()
+    """Fetches all jobs from the database (latest first)."""
+    return database.query(db.Job).order_by(db.Job.id.desc()).all()
 
 @app.post("/scrape", response_model=ScrapeResponse, tags=["Jobs"])
 async def scrape_jobs(database: Session = Depends(get_db)):

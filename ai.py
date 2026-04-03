@@ -1,22 +1,31 @@
-import requests
-import json
-
 import os
+import json
+from openai import OpenAI
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
+# The OpenAI client automatically reads the OPENAI_API_KEY environment variable.
+# We will initialize it lazily to avoid crashing immediately if the key is not set.
+
+def get_client():
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+    return OpenAI(api_key=api_key)
 
 def match_job(resume: str, job_description: str):
     prompt = f"Resume:\n{resume}\n\nJob Description:\n{job_description}\n\nOn a scale of 0 to 100, how well does this resume match the job description? Return ONLY the number."
-    payload = {
-        "model": "llama3",
-        "prompt": prompt,
-        "stream": False
-    }
+    
     try:
-        response = requests.post(OLLAMA_URL, json=payload)
-        response_json = response.json()
-        score_text = response_json.get("response", "0").strip()
-        # Clean the response to only include digits
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=10,
+            temperature=0
+        )
+        score_text = response.choices[0].message.content.strip()
         score = "".join(filter(str.isdigit, score_text))
         return float(score) if score else 0.0
     except Exception as e:
@@ -25,10 +34,13 @@ def match_job(resume: str, job_description: str):
 
 def optimize_resume(resume: str, job_description: str):
     prompt = f"""
-    You are an expert Career Coach and ATS (Applicant Tracking System) Specialist with 20 years of experience in recruitment.
+    You are an expert Career Coach and ATS (Applicant Tracking System) Specialist.
     
-    ### Task:
-    Optimize the provided resume for the given job description. Ensure the resume is highly competitive for both ATS algorithms and human recruiters.
+    Please optimize the provided resume for the given job description following these rules:
+    - Improve summary
+    - Add relevant skills
+    - Optimize for ATS
+    - Keep it realistic (do not hallucinate experiences)
     
     ### Inputs:
     - **Current Resume:**
@@ -37,53 +49,32 @@ def optimize_resume(resume: str, job_description: str):
     - **Job Description:**
     {job_description}
     
-    ### Requirements:
-    1. **Keywords:** Naturally integrate high-impact keywords and skills identified from the job description.
-    2. **Impact:** Use strong action verbs and the STAR (Situation, Task, Action, Result) method for bullet points where possible.
-    3. **Formatting:** Use professional Markdown formatting (Headers, Bullet points, Bold text).
-    4. **Conciseness:** Keep it professional and remove irrelevant details that don't align with the target role.
-    5. **Truthfulness:** Do NOT hallucinate skills or experiences. Only optimize based on existing information and the job context.
-    
     ### Output Format:
-    Return your response ONLY as a JSON object with the following structure:
+    Return your response ONLY as a valid JSON object with the following structure:
     {{
         "updated_resume": "The full optimized resume text in Markdown",
         "changes_made": [
-            "List of specific changes made to optimize for ATS",
-            "Example: Added keyword 'Kubernetes' to skills section",
-            "Example: Rephrased experience at Google to emphasize leadership results"
+            "List of specific changes made to optimize for ATS"
         ]
     }}
-    
-    Ensure the response is valid JSON.
     """
     
-    payload = {
-        "model": "llama3",
-        "prompt": prompt,
-        "stream": False,
-        "format": "json"
-    }
-    
     try:
-        response = requests.post(OLLAMA_URL, json=payload)
-        response_json = response.json()
-        raw_content = response_json.get("response", "")
-        
-        # Try to parse the JSON response
-        try:
-            structured_data = json.loads(raw_content)
-            return structured_data
-        except json.JSONDecodeError:
-            # Fallback if AI didn't return valid JSON
-            return {
-                "updated_resume": raw_content or resume,
-                "changes_made": ["Optimization complete (structural changes applied)"]
-            }
-            
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that only outputs JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={ "type": "json_object" }
+        )
+        raw_content = response.choices[0].message.content
+        structured_data = json.loads(raw_content)
+        return structured_data
     except Exception as e:
         print(f"Error in optimize_resume: {e}")
         return {
             "updated_resume": resume,
-            "changes_made": [f"Error occurred: {str(e)}"]
+            "changes_made": [f"Error occurred: OpenAI API request failed. Details: {str(e)}."]
         }
